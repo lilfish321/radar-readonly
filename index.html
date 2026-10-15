@@ -7,7 +7,7 @@
 </head>
 <body style="margin:0;background:#0d1117;color:#c9d1d9;font-family:'Segoe UI','Microsoft YaHei',sans-serif">
 <div style="padding:12px 14px;border-bottom:1px solid #21262d;display:flex;justify-content:space-between;align-items:baseline">
-  <span style="font-weight:800;font-size:15px">📡 雷达镜像 <span style="font-size:10px;color:#8b949e">readonly · 只读</span></span>
+  <span style="font-weight:800;font-size:15px">📡 雷达镜像 <span style="font-size:10px;color:#8b949e">readonly v1.3 · 只读·Gist单通道</span></span>
   <span id="clock" style="font-size:11px;color:#8b949e"></span>
 </div>
 
@@ -150,15 +150,29 @@ function loadAcct(manual){
       html+='<div style="margin-top:6px;font-size:11px;color:#8b949e">'+s.trades.slice(-3).map(function(t){ var d=new Date(t.ts); return t.act+' '+t.n+' '+t.shares+'股'; }).join(' · ')+'</div>';
     }
     $('acct').innerHTML=html;
+    _roSnap=snap; renderZtFromSnap(); renderThemeFromSnap();
     err('');
   }).catch(function(e){ $('acct').innerHTML='<span style="color:#ff8a9a">拉取失败: '+e.message+'</span>'; });
 }
 
+var _roSnap=null;
+function renderZtFromSnap(){ var el=$('zt'); if(!_roSnap||!_roSnap.zt){ el.innerHTML='<span style="color:#566178">等待主端推送涨停池…</span>'; return; }
+  var zt=_roSnap.zt||[];
+  var h='<div style="font-size:11px;color:#8b949e;margin-bottom:4px">涨停 '+zt.length+'只 · 主端 '+(_roSnap.tm||'—')+' 推送</div>';
+  zt.slice(0,10).forEach(function(o){ h+='<span style="display:inline-block;margin:1px 6px 1px 0;font-size:12px"><b style="color:#ff7b72">'+(o.n||o.c)+'</b><span style="color:#8b949e">'+(o.lbc||1)+'板'+(o.zbc?('·'+o.zbc+'开'):'')+'</span></span>'; });
+  el.innerHTML=h;
+}
+function renderThemeFromSnap(){ var el=$('theme'); if(!_roSnap||!_roSnap.theme||!_roSnap.theme.length){ el.innerHTML='<span style="color:#566178">等待主端推送题材榜…</span>'; return; }
+  var h='';
+  _roSnap.theme.forEach(function(t,ix){ var hot=ix<3;
+    h+='<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px;border-bottom:1px solid #161b22"><span>'+(hot?'🔥 ':'')+ (t.f14||'—')+'</span><span style="color:'+(parseFloat(t.f3)>0?'#3fb950':'#ff7b72')+'">'+(t.f3!=null?parseFloat(t.f3).toFixed(2)+'%':'—')+'</span><span style="color:#8b949e;font-size:10px;flex:1;text-align:right">领涨 '+(t.f128||'—')+'</span></div>';
+  });
+  el.innerHTML=h;
+}
 /* ---- 调度 ---- */
-loadIdx(); loadTheme(); loadZt(); if(gistId()) loadAcct(false);
+loadIdx(); renderThemeFromSnap(); renderZtFromSnap(); if(gistId()) loadAcct(false);
 setInterval(loadIdx,15000);
-setInterval(loadTheme,30000);
-setInterval(loadZt,60000);
+
 setInterval(function(){ if(gistId()) loadAcct(false); },120000);
 </script>
 </body>
